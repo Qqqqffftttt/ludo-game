@@ -1,0 +1,586 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Ludo Kingdom</title>
+    
+    <!-- Google Fonts & Font Awesome -->
+    <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700;900&family=Poppins:wght@400;600;800;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+
+    <style>
+        :root {
+            /* Theme Variables */
+            --red: #ff3b30;
+            --green: #34c759;
+            --yellow: #ffcc00;
+            --blue: #007aff;
+            --bg-dark: #3e2723; 
+            --surface: #f4d093; 
+            --surface-light: #d7ccc8;
+            --text: #ffffff;
+            --text-muted: #8b92a5;
+            
+            --font-head: 'Orbitron', sans-serif;
+            --font-ui: 'Poppins', sans-serif;
+            --shadow: 0 10px 30px rgba(0, 0, 0, 0.6);
+            --transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; user-select: none; -webkit-tap-highlight-color: transparent; }
+
+        body {
+            background-color: var(--bg-dark); color: var(--text);
+            font-family: var(--font-ui); overflow: hidden;
+            display: flex; justify-content: center; align-items: center;
+            height: 100vh; width: 100vw; transition: background-color 0.5s;
+        }
+
+        /* --- SCREEN MANAGEMENT --- */
+        .screen {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            display: flex; flex-direction: column; opacity: 0;
+            pointer-events: none; transition: opacity 0.4s ease;
+            z-index: 10; background: var(--bg-dark);
+        }
+        .screen.active { opacity: 1; pointer-events: auto; z-index: 20; }
+
+        /* --- HOME SCREEN SPECIFIC UI --- */
+        #home-screen {
+            background: linear-gradient(rgba(0,0,0,0.4), rgba(0,0,0,0.4)), url('https://www.transparenttextures.com/patterns/wood-pattern.png'), #5c3a21;
+            background-blend-mode: overlay; padding: 20px; align-items: center; justify-content: space-between;
+        }
+
+        .top-bar-home { width: 100%; max-width: 400px; display: flex; justify-content: space-between; align-items: center; margin-top: 20px; }
+        .profile-pic { width: 50px; height: 50px; background: white; border-radius: 12px; border: 3px solid #ffd700; display: flex; justify-content: center; align-items: center; font-size: 30px; box-shadow: 0 4px 10px rgba(0,0,0,0.5); }
+        .currency-box { text-align: right; font-weight: 800; font-size: 16px; text-shadow: 1px 1px 2px #000; display: flex; flex-direction: column; gap: 5px;}
+        .coin-text { color: #ffd700; display: flex; align-items: center; justify-content: flex-end; gap: 5px; }
+
+        .game-title {
+            font-family: var(--font-head); font-weight: 900; font-size: 3.5rem; text-align: center;
+            color: #ffeb3b; text-transform: uppercase; line-height: 1; margin: 30px 0;
+            text-shadow: 0 4px 0 #b8860b, 0 8px 10px rgba(0,0,0,0.7), 0 0 20px rgba(255,215,0,0.5);
+            -webkit-text-stroke: 1px #fff;
+        }
+
+        .menu-buttons { width: 100%; max-width: 320px; display: flex; flex-direction: column; gap: 20px; }
+        .btn-3d {
+            position: relative; display: block; width: 100%; padding: 18px 20px;
+            font-family: var(--font-ui); font-weight: 900; font-size: 1.2rem;
+            color: white; text-transform: uppercase; text-align: center;
+            border-radius: 50px; border: 3px solid #fff; cursor: pointer;
+            text-shadow: 1px 1px 3px rgba(0,0,0,0.6); transition: all 0.1s;
+        }
+        .btn-red { background: linear-gradient(to bottom, #ff5e5e, #d60000); box-shadow: inset 0 4px 6px rgba(255,255,255,0.5), 0 8px 0 #8b0000, 0 12px 15px rgba(0,0,0,0.6); }
+        .btn-red:active { transform: translateY(8px); box-shadow: inset 0 4px 6px rgba(255,255,255,0.5), 0 0 0 #8b0000, 0 4px 5px rgba(0,0,0,0.6); }
+        .btn-blue { background: linear-gradient(to bottom, #5ebbff, #006bb3); box-shadow: inset 0 4px 6px rgba(255,255,255,0.5), 0 8px 0 #003a66, 0 12px 15px rgba(0,0,0,0.6); }
+        .btn-blue:active { transform: translateY(8px); box-shadow: inset 0 4px 6px rgba(255,255,255,0.5), 0 0 0 #003a66, 0 4px 5px rgba(0,0,0,0.6); }
+        .btn-green { background: linear-gradient(to bottom, #72e06a, #208018); box-shadow: inset 0 4px 6px rgba(255,255,255,0.5), 0 8px 0 #0f400b, 0 12px 15px rgba(0,0,0,0.6); }
+        .btn-green:active { transform: translateY(8px); box-shadow: inset 0 4px 6px rgba(255,255,255,0.5), 0 0 0 #0f400b, 0 4px 5px rgba(0,0,0,0.6); }
+
+        .bottom-nav { display: flex; justify-content: center; gap: 30px; margin-bottom: 30px; width: 100%; }
+        .nav-item { display: flex; flex-direction: column; align-items: center; gap: 8px; cursor: pointer; }
+        .nav-icon { width: 60px; height: 60px; border-radius: 50%; background: linear-gradient(to bottom, #5ebbff, #006bb3); border: 3px solid #ffd700; display: flex; justify-content: center; align-items: center; font-size: 24px; color: white; box-shadow: inset 0 3px 5px rgba(255,255,255,0.5), 0 5px 10px rgba(0,0,0,0.6); transition: transform 0.2s; }
+        .nav-icon:active { transform: scale(0.9); }
+        .nav-icon.shop-icon { background: linear-gradient(to bottom, #72e06a, #208018); }
+        .nav-item span { font-size: 12px; font-weight: 800; text-shadow: 1px 1px 2px #000; text-transform: uppercase; }
+
+        /* --- SHOP SCREEN (THEMES & TOKENS) --- */
+        #shop-screen { padding: 20px; overflow-y: auto; align-items: center; display: none; }
+        #shop-screen.active { display: flex; }
+        .shop-header { width: 100%; max-width: 500px; display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
+        
+        /* Tabs for Shop */
+        .shop-tabs { display: flex; gap: 10px; width: 100%; max-width: 500px; margin-bottom: 20px; background: rgba(0,0,0,0.4); border-radius: 12px; padding: 5px; }
+        .shop-tab-btn { flex: 1; padding: 10px; font-family: var(--font-head); font-weight: bold; background: transparent; border: none; color: white; border-radius: 8px; cursor: pointer; transition: 0.3s; }
+        .shop-tab-btn.active { background: #ffd700; color: #000; box-shadow: 0 3px 6px rgba(0,0,0,0.5); }
+
+        .items-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 15px; width: 100%; max-width: 500px; padding-bottom: 30px; }
+        
+        .item-card { background: rgba(255,255,255,0.1); border-radius: 15px; padding: 15px; text-align: center; border: 2px solid rgba(255,255,255,0.2); box-shadow: 0 5px 15px rgba(0,0,0,0.5); }
+        
+        /* Theme specific preview */
+        .theme-preview { width: 100%; height: 80px; border-radius: 10px; margin-bottom: 10px; border: 2px solid #fff; display: grid; grid-template-columns: 1fr 1fr; grid-template-rows: 1fr 1fr; overflow: hidden; }
+        
+        /* Token specific preview */
+        .token-preview { width: 100%; height: 80px; border-radius: 10px; margin-bottom: 10px; border: 2px solid #fff; background: rgba(0,0,0,0.3); display: flex; justify-content: center; align-items: center; font-size: 40px; color: white; text-shadow: 2px 2px 5px black; }
+
+        .item-name { font-weight: 800; font-size: 14px; margin-bottom: 5px; text-transform: uppercase; }
+        .btn-shop { width: 100%; padding: 8px; border-radius: 8px; font-weight: bold; border: none; cursor: pointer; }
+        .btn-buy { background: #ffd700; color: #000; }
+        .btn-equip { background: #007aff; color: white; }
+        .btn-equipped { background: #34c759; color: white; pointer-events: none; }
+
+        /* --- SETUP SCREEN --- */
+        #setup-screen { justify-content: center; align-items: center; padding: 20px; }
+        .card { background: rgba(30, 33, 48, 0.95); border-radius: 20px; padding: 30px; box-shadow: var(--shadow); border: 2px solid rgba(255,255,255,0.1); text-align: center; width: 100%; max-width: 400px; }
+        .input-group { margin-bottom: 15px; text-align: left; }
+        .input-group label { display: block; font-size: 0.85rem; color: var(--text-muted); margin-bottom: 8px; font-weight: 700; text-transform: uppercase; }
+        .input-group input { width: 100%; padding: 12px; border-radius: 10px; background: rgba(0,0,0,0.5); border: 2px solid var(--surface-light); color: white; font-family: var(--font-ui); outline: none; transition: var(--transition); }
+        .btn-std { background: #007aff; color: white; border: none; padding: 12px 20px; border-radius: 10px; font-family: var(--font-ui); font-weight: bold; width: 100%; cursor: pointer; margin-top: 10px; }
+
+        /* --- GAME SCREEN LAYOUT --- */
+        #game-screen { padding: 10px; display: flex; flex-direction: column; justify-content: center; align-items: center; }
+        .top-bar { width: 100%; max-width: 600px; display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; z-index: 30; }
+        .status-text { font-family: var(--font-head); font-size: 1.1rem; color: var(--yellow); text-shadow: 0 0 8px rgba(0,0,0,0.8); background: rgba(0,0,0,0.5); padding: 5px 15px; border-radius: 20px; }
+        .pause-btn { background: rgba(255,255,255,0.1); border:none; color:white; font-size:18px; padding: 10px 15px; border-radius: 10px; cursor: pointer; }
+
+        .game-layout { display: grid; grid-template-columns: 1fr 1fr; grid-template-rows: auto auto auto; gap: 15px; width: 100%; max-width: 550px; align-items: center; justify-items: center; }
+
+        /* --- PLAYER ZONES & SMOOTH 3D DICE --- */
+        .player-zone {
+            display: flex; flex-direction: column; align-items: center; justify-content: center;
+            background: rgba(0,0,0,0.5); padding: 10px; border-radius: 15px; width: 100%;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.3); border: 2px solid transparent;
+            transition: var(--transition); opacity: 0.5; filter: grayscale(0.8);
+        }
+        .player-zone.active-turn { opacity: 1; filter: grayscale(0); transform: scale(1.05); box-shadow: 0 0 20px currentColor; border-color: currentColor; }
+        .player-zone.hidden { display: none; }
+        .p-red { grid-column: 1 / 2; grid-row: 1 / 2; color: var(--red); }
+        .p-green { grid-column: 2 / 3; grid-row: 1 / 2; color: var(--green); }
+        .p-blue { grid-column: 1 / 2; grid-row: 3 / 4; color: var(--blue); }
+        .p-yellow { grid-column: 2 / 3; grid-row: 3 / 4; color: var(--yellow); }
+        .p-name { font-size: 0.85rem; font-weight: 700; color: white; margin-bottom: 8px; text-transform: uppercase; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 100px; }
+
+        .dice {
+            width: 55px; height: 55px; background: radial-gradient(circle at 30% 30%, #ffffff, #d4d4d4);
+            border-radius: 12px; display: flex; justify-content: center; align-items: center; cursor: pointer; 
+            box-shadow: inset -4px -4px 8px rgba(0,0,0,0.2), inset 2px 2px 6px rgba(255,255,255,0.9), 0 6px 12px rgba(0,0,0,0.5);
+            border: 1px solid #c0c0c0; transition: transform 0.1s; transform-style: preserve-3d;
+        }
+        .dice-number { font-size: 32px; font-weight: 900; font-family: var(--font-head); color: #111; text-shadow: 1px 1px 1px rgba(255,255,255,0.8), -1px -1px 2px rgba(0,0,0,0.5); }
+        
+        /* Smooth Realistic 3D Roll Animation */
+        .dice.rolling { animation: roll-3d 0.6s cubic-bezier(0.25, 0.1, 0.25, 1); pointer-events: none; box-shadow: 0 0 25px currentColor; }
+        .dice:active { transform: scale(0.9); box-shadow: inset -2px -2px 5px rgba(0,0,0,0.2), 0 2px 5px rgba(0,0,0,0.5); }
+        
+        @keyframes roll-3d { 
+            0% { transform: rotateX(0deg) rotateY(0deg) scale(1); } 
+            25% { transform: rotateX(180deg) rotateY(90deg) scale(1.2); } 
+            50% { transform: rotateX(360deg) rotateY(180deg) scale(1.3); } 
+            75% { transform: rotateX(540deg) rotateY(270deg) scale(1.1); } 
+            100% { transform: rotateX(720deg) rotateY(360deg) scale(1); } 
+        }
+
+        /* --- LUDO BOARD --- */
+        .board-wrapper { grid-column: 1 / 3; grid-row: 2 / 3; position: relative; width: 95vmin; max-width: 400px; height: 95vmin; max-height: 400px; background: var(--surface); border-radius: 12px; padding: 8px; box-shadow: var(--shadow); border: 3px solid rgba(0,0,0,0.8); }
+        .ludo-grid { display: grid; grid-template-columns: repeat(15, 1fr); grid-template-rows: repeat(15, 1fr); width: 100%; height: 100%; background: #000; border: 2px solid rgba(0,0,0,0.5); border-radius: 8px; overflow: hidden; position: relative; }
+        .cell { border: 1px solid rgba(0,0,0,0.1); display: flex; justify-content: center; align-items: center; background: var(--surface); }
+
+        .home-base { position: absolute; width: 40%; height: 40%; padding: 8%; display: grid; grid-template-columns: 1fr 1fr; gap: 15%; border: 2px solid rgba(0,0,0,0.5);}
+        .home-base .token-spot { background: rgba(0,0,0,0.4); border-radius: 50%; width: 100%; height: 100%; box-shadow: inset 0 3px 6px rgba(0,0,0,0.8); position: relative; }
+        .base-red { top: 0; left: 0; background: var(--red); }
+        .base-green { top: 0; right: 0; background: var(--green); }
+        .base-blue { bottom: 0; left: 0; background: var(--blue); }
+        .base-yellow { bottom: 0; right: 0; background: var(--yellow); }
+        .center-home { position: absolute; top: 40%; left: 40%; width: 20%; height: 20%; border: 20px solid transparent; border-top-color: var(--red); border-right-color: var(--green); border-bottom-color: var(--yellow); border-left-color: var(--blue); }
+
+        .safe-zone { background: rgba(0, 0, 0, 0.1); }
+        .safe-zone::after { content: '\f005'; font-family: "Font Awesome 6 Free"; font-weight: 900; font-size: 14px; opacity: 0.6; }
+        
+        .path-red { background: var(--red); opacity: 0.8; } .path-green { background: var(--green); opacity: 0.8; }
+        .path-yellow { background: var(--yellow); opacity: 0.8; } .path-blue { background: var(--blue); opacity: 0.8; }
+
+        /* Tokens Layer */
+        #tokens-layer { position: absolute; top: 8px; left: 8px; right: 8px; bottom: 8px; pointer-events: none; }
+        
+        .token {
+            position: absolute; width: calc(100% / 15); height: calc(100% / 15);
+            border-radius: 50%; border: 2px solid white;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.6), inset 0 -3px 5px rgba(0,0,0,0.4);
+            transition: left 0.3s ease-out, top 0.3s ease-out, transform 0.2s;
+            pointer-events: auto; cursor: pointer; z-index: 100;
+            display: flex; justify-content: center; align-items: center; /* Important for icons */
+        }
+        .token.red { background: radial-gradient(circle at 30% 30%, #ffaaaa, var(--red)); }
+        .token.green { background: radial-gradient(circle at 30% 30%, #aaffaa, var(--green)); }
+        .token.yellow { background: radial-gradient(circle at 30% 30%, #ffffaa, var(--yellow)); }
+        .token.blue { background: radial-gradient(circle at 30% 30%, #aaaaff, var(--blue)); }
+        
+        .token.active-token { animation: pulse 0.8s infinite alternate; box-shadow: 0 0 15px currentColor, 0 4px 6px rgba(0,0,0,0.6); z-index: 105; cursor: pointer; }
+        .token.ai-token { pointer-events: none; }
+        @keyframes pulse { 0% { transform: scale(1); } 100% { transform: scale(1.25); } }
+    </style>
+</head>
+<body>
+
+    <!-- HOME SCREEN -->
+    <div id="home-screen" class="screen active">
+        <div class="top-bar-home">
+            <div class="profile-pic">👦🏽</div>
+            <div class="currency-box">
+                <div class="coin-text"><span id="ui-coins">1000</span> <img src="https://cdn-icons-png.flaticon.com/128/1490/1490804.png" width="20" alt="coins"></div>
+            </div>
+        </div>
+        <div class="game-title">LUDO<br>KINGDOM</div>
+        <div class="menu-buttons">
+            <button class="btn-3d btn-red" onclick="openSetup('2P')">PLAY 2 PLAYER</button>
+            <button class="btn-3d btn-blue" onclick="openSetup('4P')">PASS & PLAY</button>
+            <button class="btn-3d btn-green" onclick="openSetup('1vAI')">VS COMPUTER</button>
+        </div>
+        <div class="bottom-nav">
+            <div class="nav-item" onclick="openShop('themes')">
+                <div class="nav-icon shop-icon"><i class="fa-solid fa-cart-shopping"></i></div>
+                <span>Shop</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- SHOP SCREEN -->
+    <div id="shop-screen" class="screen">
+        <div class="shop-header">
+            <button class="pause-btn" onclick="showScreen('home-screen')"><i class="fa-solid fa-arrow-left"></i> Back</button>
+            <div class="coin-text" style="font-weight:bold; font-size:18px;"><span id="shop-coins">1000</span> <img src="https://cdn-icons-png.flaticon.com/128/1490/1490804.png" width="20"></div>
+        </div>
+        
+        <div class="shop-tabs">
+            <button class="shop-tab-btn active" id="tab-themes" onclick="switchShopTab('themes')">Board Themes</button>
+            <button class="shop-tab-btn" id="tab-tokens" onclick="switchShopTab('tokens')">Gotis (Tokens)</button>
+        </div>
+
+        <div class="items-grid" id="themes-grid"></div>
+        <div class="items-grid" id="tokens-grid" style="display:none;"></div>
+    </div>
+
+    <!-- SETUP SCREEN -->
+    <div id="setup-screen" class="screen">
+        <div class="card">
+            <h2 id="setup-title" style="margin-bottom:20px;">Setup Game</h2>
+            <div id="player-inputs"></div>
+            <button class="btn-std" style="background:#34c759;" onclick="startGame()">START GAME</button>
+            <button class="btn-std" style="background:#555;" onclick="showScreen('home-screen')">BACK</button>
+        </div>
+    </div>
+
+    <!-- GAME SCREEN -->
+    <div id="game-screen" class="screen">
+        <div class="top-bar">
+            <button class="pause-btn" onclick="pauseGame()"><i class="fa-solid fa-pause"></i></button>
+            <div class="status-text" id="game-status">Game Starting...</div>
+            <button class="pause-btn" style="visibility: hidden;"><i class="fa-solid fa-pause"></i></button>
+        </div>
+        <div class="game-layout">
+            <div class="player-zone p-red" id="zone-red"><div class="p-name" id="name-display-red">Red</div><div class="dice" id="dice-red" onclick="rollDiceClick('red')"></div></div>
+            <div class="player-zone p-green" id="zone-green"><div class="p-name" id="name-display-green">Green</div><div class="dice" id="dice-green" onclick="rollDiceClick('green')"></div></div>
+            <div class="board-wrapper">
+                <div id="ludo-grid" class="ludo-grid">
+                    <div class="home-base base-red"><div class="token-spot"></div><div class="token-spot"></div><div class="token-spot"></div><div class="token-spot"></div></div>
+                    <div class="home-base base-green"><div class="token-spot"></div><div class="token-spot"></div><div class="token-spot"></div><div class="token-spot"></div></div>
+                    <div class="home-base base-blue"><div class="token-spot"></div><div class="token-spot"></div><div class="token-spot"></div><div class="token-spot"></div></div>
+                    <div class="home-base base-yellow"><div class="token-spot"></div><div class="token-spot"></div><div class="token-spot"></div><div class="token-spot"></div></div>
+                    <div class="center-home"></div>
+                </div>
+                <div id="tokens-layer"></div>
+            </div>
+            <div class="player-zone p-blue" id="zone-blue"><div class="p-name" id="name-display-blue">Blue</div><div class="dice" id="dice-blue" onclick="rollDiceClick('blue')"></div></div>
+            <div class="player-zone p-yellow" id="zone-yellow"><div class="p-name" id="name-display-yellow">Yellow</div><div class="dice" id="dice-yellow" onclick="rollDiceClick('yellow')"></div></div>
+        </div>
+    </div>
+
+    <script>
+        /* ==========================================================
+           1. COIN, THEME & GOTI (TOKEN) SYSTEM
+           ========================================================== */
+        let userCoins = parseInt(localStorage.getItem('ludo_coins')) || 1500; 
+
+        // Themes Logic
+        let unlockedThemes = JSON.parse(localStorage.getItem('ludo_unlocked')) || ['classic'];
+        let currentTheme = localStorage.getItem('ludo_theme') || 'classic';
+        const THEMES = [
+            { id: 'classic', name: 'Classic Wood', price: 0, bg: '#3e2723', board: '#f4d093', c1: '#ff3b30', c2: '#34c759', c3: '#ffcc00', c4: '#007aff' },
+            { id: 'dark', name: 'Dark Mode', price: 500, bg: '#121212', board: '#2c2c2c', c1: '#ff4444', c2: '#00cc66', c3: '#ffbb33', c4: '#33b5e5' },
+            { id: 'neon', name: 'Cyber Neon', price: 1000, bg: '#090a0f', board: '#1a1b26', c1: '#ff003c', c2: '#00ff66', c3: '#ffea00', c4: '#00e5ff' },
+            { id: 'candy', name: 'Candy Land', price: 1000, bg: '#ffb6c1', board: '#ffe4e1', c1: '#ff69b4', c2: '#98fb98', c3: '#fdfd96', c4: '#87cefa' },
+            { id: 'ocean', name: 'Deep Ocean', price: 1500, bg: '#001f3f', board: '#0074D9', c1: '#FF4136', c2: '#2ECC40', c3: '#FFDC00', c4: '#7FDBFF' },
+            { id: 'gold', name: 'VIP Gold', price: 5000, bg: '#000000', board: '#262626', c1: '#b76e79', c2: '#50c878', c3: '#ffd700', c4: '#e5e4e2' }
+        ];
+
+        // Tokens/Goti Logic
+        let unlockedTokens = JSON.parse(localStorage.getItem('ludo_unlocked_tokens')) || ['classic_token'];
+        let currentToken = localStorage.getItem('ludo_token') || 'classic_token';
+        const TOKENS = [
+            { id: 'classic_token', name: 'Classic Goti', price: 0, icon: '' },
+            { id: 'star', name: 'Star Goti', price: 200, icon: 'fa-star' },
+            { id: 'crown', name: 'Crown Goti', price: 400, icon: 'fa-crown' },
+            { id: 'diamond', name: 'Diamond Goti', price: 600, icon: 'fa-gem' },
+            { id: 'shield', name: 'Shield Goti', price: 800, icon: 'fa-shield-halved' },
+            { id: 'heart', name: 'Heart Goti', price: 1000, icon: 'fa-heart' },
+            { id: 'bolt', name: 'Flash Goti', price: 1200, icon: 'fa-bolt' },
+            { id: 'skull', name: 'Skull Goti', price: 1500, icon: 'fa-skull' },
+            { id: 'ghost', name: 'Ghost Goti', price: 2000, icon: 'fa-ghost' },
+            { id: 'dragon', name: 'Dragon Goti', price: 3000, icon: 'fa-dragon' }
+        ];
+
+        function updateCoinUI() {
+            document.getElementById('ui-coins').innerText = userCoins;
+            document.getElementById('shop-coins').innerText = userCoins;
+            localStorage.setItem('ludo_coins', userCoins);
+        }
+
+        // Setup the UI for Shop (Themes and Tokens)
+        function switchShopTab(tab) {
+            document.getElementById('tab-themes').classList.remove('active');
+            document.getElementById('tab-tokens').classList.remove('active');
+            document.getElementById(`tab-${tab}`).classList.add('active');
+            
+            if(tab === 'themes') {
+                document.getElementById('themes-grid').style.display = 'grid';
+                document.getElementById('tokens-grid').style.display = 'none';
+                renderThemeShop();
+            } else {
+                document.getElementById('themes-grid').style.display = 'none';
+                document.getElementById('tokens-grid').style.display = 'grid';
+                renderTokenShop();
+            }
+        }
+
+        function renderThemeShop() {
+            const grid = document.getElementById('themes-grid'); grid.innerHTML = '';
+            THEMES.forEach(t => {
+                const isUnlocked = unlockedThemes.includes(t.id);
+                const isEquipped = currentTheme === t.id;
+                let btn = isEquipped ? `<button class="btn-shop btn-equipped">EQUIPPED</button>` : 
+                          isUnlocked ? `<button class="btn-shop btn-equip" onclick="equipTheme('${t.id}')">SELECT</button>` : 
+                                       `<button class="btn-shop btn-buy" onclick="buyTheme('${t.id}', ${t.price})">BUY 🪙 ${t.price}</button>`;
+                grid.innerHTML += `<div class="item-card"><div class="theme-preview" style="background:${t.board}"><div style="background:${t.c1}"></div><div style="background:${t.c2}"></div><div style="background:${t.c4}"></div><div style="background:${t.c3}"></div></div><div class="item-name">${t.name}</div>${btn}</div>`;
+            });
+        }
+
+        function renderTokenShop() {
+            const grid = document.getElementById('tokens-grid'); grid.innerHTML = '';
+            TOKENS.forEach(t => {
+                const isUnlocked = unlockedTokens.includes(t.id);
+                const isEquipped = currentToken === t.id;
+                let btn = isEquipped ? `<button class="btn-shop btn-equipped">EQUIPPED</button>` : 
+                          isUnlocked ? `<button class="btn-shop btn-equip" onclick="equipToken('${t.id}')">SELECT</button>` : 
+                                       `<button class="btn-shop btn-buy" onclick="buyToken('${t.id}', ${t.price})">BUY 🪙 ${t.price}</button>`;
+                
+                let iconDisplay = t.icon ? `<i class="fa-solid ${t.icon}"></i>` : `<i class="fa-solid fa-circle"></i>`;
+                grid.innerHTML += `<div class="item-card"><div class="token-preview">${iconDisplay}</div><div class="item-name">${t.name}</div>${btn}</div>`;
+            });
+        }
+
+        function buyTheme(id, price) { if (userCoins >= price) { userCoins -= price; unlockedThemes.push(id); localStorage.setItem('ludo_unlocked', JSON.stringify(unlockedThemes)); updateCoinUI(); renderThemeShop(); AudioEngine.play('unlock'); } else alert("Not enough coins!"); }
+        function buyToken(id, price) { if (userCoins >= price) { userCoins -= price; unlockedTokens.push(id); localStorage.setItem('ludo_unlocked_tokens', JSON.stringify(unlockedTokens)); updateCoinUI(); renderTokenShop(); AudioEngine.play('unlock'); } else alert("Not enough coins!"); }
+
+        function equipTheme(id) { applyTheme(id); renderThemeShop(); AudioEngine.play('move'); }
+        function equipToken(id) { currentToken = id; localStorage.setItem('ludo_token', id); renderTokenShop(); AudioEngine.play('move'); }
+
+        function applyTheme(themeId) {
+            const t = THEMES.find(x => x.id === themeId); const root = document.documentElement;
+            root.style.setProperty('--bg-dark', t.bg); root.style.setProperty('--surface', t.board);
+            root.style.setProperty('--red', t.c1); root.style.setProperty('--green', t.c2);
+            root.style.setProperty('--yellow', t.c3); root.style.setProperty('--blue', t.c4);
+            currentTheme = themeId; localStorage.setItem('ludo_theme', themeId);
+        }
+
+        function openShop(defaultTab) { showScreen('shop-screen'); switchShopTab(defaultTab); }
+
+        updateCoinUI(); applyTheme(currentTheme);
+
+        /* ==========================================================
+           2. AUDIO & CORE GAMEPLAY
+           ========================================================== */
+        const AudioEngine = {
+            ctx: null,
+            init() { if (!this.ctx) this.ctx = new (window.AudioContext || window.webkitAudioContext)(); if (this.ctx.state === 'suspended') this.ctx.resume(); },
+            play(type) {
+                if (!this.ctx) return; const now = this.ctx.currentTime;
+                if (type === 'dice') { for(let i=0; i<4; i++) { setTimeout(() => { const osc = this.ctx.createOscillator(); const gain = this.ctx.createGain(); osc.type = 'square'; osc.frequency.setValueAtTime(300+Math.random()*400, this.ctx.currentTime); gain.gain.setValueAtTime(0.05, this.ctx.currentTime); gain.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime+0.05); osc.connect(gain); gain.connect(this.ctx.destination); osc.start(); osc.stop(this.ctx.currentTime+0.05); }, i*80); } } 
+                else if (type === 'move') { const osc = this.ctx.createOscillator(); const gain = this.ctx.createGain(); osc.type = 'sine'; osc.frequency.setValueAtTime(600, now); osc.frequency.exponentialRampToValueAtTime(300, now+0.1); gain.gain.setValueAtTime(0.15, now); gain.gain.exponentialRampToValueAtTime(0.01, now+0.1); osc.connect(gain); gain.connect(this.ctx.destination); osc.start(now); osc.stop(now+0.1); } 
+                else if (type === 'kill') { const osc = this.ctx.createOscillator(); const gain = this.ctx.createGain(); osc.type = 'sawtooth'; osc.frequency.setValueAtTime(400, now); osc.frequency.exponentialRampToValueAtTime(50, now+0.3); gain.gain.setValueAtTime(0.2, now); gain.gain.exponentialRampToValueAtTime(0.01, now+0.3); osc.connect(gain); gain.connect(this.ctx.destination); osc.start(now); osc.stop(now+0.3); } 
+                else if (type === 'unlock') { const osc = this.ctx.createOscillator(); const gain = this.ctx.createGain(); osc.type = 'triangle'; osc.frequency.setValueAtTime(500, now); osc.frequency.linearRampToValueAtTime(1000, now+0.15); gain.gain.setValueAtTime(0.1, now); gain.gain.linearRampToValueAtTime(0.01, now+0.3); osc.connect(gain); gain.connect(this.ctx.destination); osc.start(now); osc.stop(now+0.3); }
+                else if (type === 'win') { const notes = [440, 554, 659, 880]; notes.forEach((freq, i) => { const osc = this.ctx.createOscillator(); const gain = this.ctx.createGain(); osc.type = 'square'; osc.frequency.value = freq; const startTime = now+(i*0.15); gain.gain.setValueAtTime(0, startTime); gain.gain.linearRampToValueAtTime(0.1, startTime+0.05); gain.gain.linearRampToValueAtTime(0, startTime+0.3); osc.connect(gain); gain.connect(this.ctx.destination); osc.start(startTime); osc.stop(startTime+0.3); }); }
+            }
+        };
+
+        const COLORS = ['red', 'green', 'yellow', 'blue'];
+        document.querySelectorAll('.dice').forEach(dice => { dice.innerHTML = `<div class="dice-number" id="dice-val-${dice.id.split('-')[1]}">6</div>`; });
+
+        const MAIN_PATH = [ [1,6],[2,6],[3,6],[4,6],[5,6], [6,5],[6,4],[6,3],[6,2],[6,1],[6,0], [7,0],[8,0], [8,1],[8,2],[8,3],[8,4],[8,5], [9,6],[10,6],[11,6],[12,6],[13,6],[14,6], [14,7],[14,8], [13,8],[12,8],[11,8],[10,8],[9,8], [8,9],[8,10],[8,11],[8,12],[8,13],[8,14], [7,14],[6,14], [6,13],[6,12],[6,11],[6,10],[6,9], [5,8],[4,8],[3,8],[2,8],[1,8],[0,8], [0,7],[0,6] ];
+        const HOME_PATHS = { red: [[1,7],[2,7],[3,7],[4,7],[5,7]], green: [[7,1],[7,2],[7,3],[7,4],[7,5]], yellow: [[13,7],[12,7],[11,7],[10,7],[9,7]], blue: [[7,13],[7,12],[7,11],[7,10],[7,9]] };
+        const SAFE_ZONES = [0, 8, 13, 21, 26, 34, 39, 47];
+        const START_INDICES = { red: 0, green: 13, yellow: 26, blue: 39 };
+
+        let currentMode = ''; let players = []; let currentTurnIndex = 0; let diceValue = 0; let isDiceRolling = false; let hasRolled = false;
+
+        function showScreen(id) { document.querySelectorAll('.screen').forEach(s => s.classList.remove('active')); document.getElementById(id).classList.add('active'); }
+
+        function openSetup(mode) {
+            currentMode = mode; AudioEngine.init(); const container = document.getElementById('player-inputs'); container.innerHTML = '';
+            document.getElementById('setup-title').innerText = mode === '2P' ? '2 Players' : mode === '4P' ? '4 Players' : '1 VS Computer';
+            let configs = mode === '2P' ? [{c:'red', label:'Player 1'}, {c:'blue', label:'Player 2'}] : mode === '4P' ? [{c:'red', label:'Player 1'}, {c:'green', label:'Player 2'}, {c:'yellow', label:'Player 3'}, {c:'blue', label:'Player 4'}] : [{c:'red', label:'You'}, {c:'blue', label:'AI Bot', isAI:true, fixed:'AI Bot'}];
+            configs.forEach(cfg => { container.innerHTML += `<div class="input-group"><label style="color: var(--${cfg.c})">${cfg.label}</label><input type="text" id="name-${cfg.c}" value="${cfg.fixed || `Player ${cfg.c}`}" ${cfg.fixed ? 'readonly' : ''}></div>`; });
+            showScreen('setup-screen');
+        }
+
+        function createBoardGrid() {
+            const grid = document.getElementById('ludo-grid'); grid.querySelectorAll('.cell').forEach(c => c.remove());
+            const safeCoords = ["1-6", "2-8", "6-1", "8-2", "6-13", "8-12", "12-6", "13-8"];
+            for (let y = 0; y < 15; y++) {
+                for (let x = 0; x < 15; x++) {
+                    const cell = document.createElement('div'); cell.className = 'cell';
+                    if (safeCoords.includes(`${x}-${y}`)) { cell.classList.add('safe-zone'); cell.style.color = "var(--red)"; }
+                    if (y === 7 && x >= 1 && x <= 5) cell.classList.add('path-red'); if (x === 7 && y >= 1 && y <= 5) cell.classList.add('path-green');
+                    if (x === 7 && y >= 9 && y <= 13) cell.classList.add('path-blue'); if (y === 7 && x >= 9 && x <= 13) cell.classList.add('path-yellow');
+                    grid.appendChild(cell);
+                }
+            }
+        }
+
+        function startGame() {
+            let activeColors = (currentMode === '2P' || currentMode === '1vAI') ? ['red', 'blue'] : COLORS;
+            players = activeColors.map(color => {
+                return {
+                    color: color, name: document.getElementById(`name-${color}`).value, isAI: currentMode === '1vAI' && color === 'blue',
+                    tokens: [1,2,3,4].map(i => ({ id: `${color}-${i}`, state: 'home', pos: -1, stepsTaken: 0 }))
+                };
+            });
+            COLORS.forEach(c => {
+                const zone = document.getElementById(`zone-${c}`);
+                if (activeColors.includes(c)) { zone.classList.remove('hidden'); document.getElementById(`name-display-${c}`).innerText = players.find(p=>p.color===c).name; document.getElementById(`dice-val-${c}`).innerText = 6; } 
+                else zone.classList.add('hidden');
+            });
+            createBoardGrid(); initTokensDOM(); showScreen('game-screen'); currentTurnIndex = 0; updateTurnUI();
+        }
+
+        function initTokensDOM() {
+            document.getElementById('tokens-layer').innerHTML = ''; document.querySelectorAll('.token-spot').forEach(spot => spot.innerHTML = '');
+            
+            // Get purchased style
+            const tokenStyle = TOKENS.find(t => t.id === currentToken);
+            let iconHTML = tokenStyle.icon ? `<i class="fa-solid ${tokenStyle.icon}" style="color:rgba(255,255,255,0.9); font-size:16px; filter:drop-shadow(1px 1px 2px #000);"></i>` : '';
+
+            players.forEach(player => {
+                player.tokens.forEach((token, tIndex) => {
+                    const el = document.createElement('div'); el.className = `token ${player.color} ${player.isAI ? 'ai-token' : ''}`;
+                    el.id = token.id; el.onclick = () => { if (!player.isAI) onTokenClick(player.color, tIndex); };
+                    el.innerHTML = iconHTML; // Apply Goti Style here
+                    token.element = el; moveTokenToBase(token, player.color);
+                });
+            });
+        }
+        function moveTokenToBase(token, color) { const baseSpots = document.querySelectorAll(`.base-${color} .token-spot`); for (let spot of baseSpots) { if (spot.children.length === 0) { spot.appendChild(token.element); break; } } token.element.style.position = 'relative'; token.element.style.left = '0'; token.element.style.top = '0'; token.element.style.width = '100%'; token.element.style.height = '100%'; }
+        function moveTokenToBoard(token) { document.getElementById('tokens-layer').appendChild(token.element); token.element.style.position = 'absolute'; token.element.style.width = `calc(100% / 15)`; token.element.style.height = `calc(100% / 15)`; }
+        function setTokenPosition(element, x, y) { element.style.left = `${(x * 100) / 15}%`; element.style.top = `${(y * 100) / 15}%`; }
+
+        function updateTurnUI() {
+            document.querySelectorAll('.player-zone').forEach(z => z.classList.remove('active-turn'));
+            const cp = players[currentTurnIndex];
+            document.getElementById(`zone-${cp.color}`).classList.add('active-turn');
+            document.getElementById('game-status').innerText = `${cp.name}'s Turn`;
+            if (cp.isAI) setTimeout(aiTurn, 800);
+        }
+
+        function rollDiceClick(color) { const cp = players[currentTurnIndex]; if (cp.isAI || cp.color !== color || isDiceRolling || hasRolled) return; executeRoll(color); }
+
+        function executeRoll(color) {
+            isDiceRolling = true; AudioEngine.play('dice');
+            const diceEl = document.getElementById(`dice-${color}`); diceEl.classList.add('rolling');
+            document.getElementById('game-status').innerText = "Rolling...";
+
+            // Rapidly shuffle numbers to make it realistic
+            let shuffleInterval = setInterval(() => {
+                document.getElementById(`dice-val-${color}`).innerText = Math.floor(Math.random() * 6) + 1;
+            }, 60);
+
+            setTimeout(() => {
+                clearInterval(shuffleInterval);
+                diceEl.classList.remove('rolling');
+                let newVal; do { newVal = Math.floor(Math.random() * 6) + 1; } while (newVal === diceValue && newVal !== 6);
+                diceValue = newVal; document.getElementById(`dice-val-${color}`).innerText = diceValue;
+                isDiceRolling = false; hasRolled = true; document.getElementById('game-status').innerText = `Rolled a ${diceValue}!`;
+                handleDiceResult();
+            }, 600);
+        }
+
+        function handleDiceResult() {
+            const cp = players[currentTurnIndex]; let possibleMoves = 0;
+            cp.tokens.forEach(token => { if (isValidMove(token, diceValue)) { if(!cp.isAI) token.element.classList.add('active-token'); possibleMoves++; } });
+            if (possibleMoves === 0) { document.getElementById('game-status').innerText = "No moves!"; setTimeout(() => nextTurn(false), 1200); } 
+            else if (!cp.isAI) document.getElementById('game-status').innerText = "Select a goti";
+        }
+
+        function isValidMove(token, dice) { if (token.state === 'home') return dice === 6; if (token.state === 'won') return false; if (token.stepsTaken + dice > 56) return false; return true; }
+
+        async function onTokenClick(color, tIndex) {
+            const cp = players[currentTurnIndex]; if (color !== cp.color) return;
+            const token = cp.tokens[tIndex]; if (!cp.isAI && !token.element.classList.contains('active-token')) return;
+
+            document.querySelectorAll('.active-token').forEach(el => el.classList.remove('active-token'));
+            document.getElementById('game-status').innerText = "Moving...";
+            let extraTurn = (diceValue === 6);
+
+            if (token.state === 'home') {
+                token.state = 'board'; token.pos = START_INDICES[color]; token.stepsTaken = 0;
+                moveTokenToBoard(token); const c = MAIN_PATH[token.pos]; setTokenPosition(token.element, c[0], c[1]);
+                AudioEngine.play('unlock'); setTimeout(() => nextTurn(extraTurn), 500); return;
+            }
+
+            const pathCoords = [];
+            for (let i = 0; i < diceValue; i++) {
+                token.stepsTaken++;
+                if (token.stepsTaken <= 50) { token.pos = (token.pos + 1) % 52; pathCoords.push([...MAIN_PATH[token.pos]]); }
+                else if (token.stepsTaken <= 55) { token.state = 'home_path'; token.pos = token.stepsTaken - 51; pathCoords.push([...HOME_PATHS[color][token.pos]]); }
+                else if (token.stepsTaken === 56) { token.state = 'won'; pathCoords.push('center'); }
+            }
+
+            for (let coords of pathCoords) {
+                if (coords === 'center') { token.element.style.display = 'none'; extraTurn = true; AudioEngine.play('win'); } 
+                else { setTokenPosition(token.element, coords[0], coords[1]); AudioEngine.play('move'); }
+                await new Promise(r => setTimeout(r, 250));
+            }
+
+            if (token.state === 'board' && !SAFE_ZONES.includes(token.pos)) {
+                let killed = false;
+                players.forEach(p => { if (p.color !== color) { p.tokens.forEach(t => { if (t.state === 'board' && t.pos === token.pos) { t.state = 'home'; t.pos = -1; t.stepsTaken = 0; moveTokenToBase(t, p.color); killed = true; } }); } });
+                if (killed) { extraTurn = true; AudioEngine.play('kill'); await new Promise(r => setTimeout(r, 500)); }
+            }
+            if (cp.tokens.every(t => t.state === 'won')) { showVictoryScreen(color); return; }
+            nextTurn(extraTurn);
+        }
+
+        function nextTurn(extraTurn) { hasRolled = false; if (!extraTurn) currentTurnIndex = (currentTurnIndex + 1) % players.length; updateTurnUI(); }
+
+        function showVictoryScreen(color) {
+            const p = players.find(x => x.color === color);
+            // Reward 100 Coins
+            if(!p.isAI) { userCoins += 100; updateCoinUI(); }
+
+            const div = document.createElement('div'); div.className = 'screen active'; div.style.backgroundColor = 'rgba(0,0,0,0.9)'; div.style.justifyContent = 'center'; div.style.alignItems = 'center';
+            div.innerHTML = `<div class="card" style="text-align:center;"><i class="fa-solid fa-crown" style="font-size: 60px; color: var(--${color}); margin-bottom: 20px;"></i><h1 style="color: var(--${color}); font-family:var(--font-head);">VICTORY!</h1><h2 style="color:white; margin-bottom:10px;">${p.name} Wins!</h2>${!p.isAI ? `<h3 style="color:#ffd700; margin-bottom:20px;">+100 Coins Earned! 🪙</h3>` : ''}<button class="btn-std" style="background:#007aff" onclick="location.reload()">Back to Home</button></div>`;
+            document.body.appendChild(div); let c=0; let int = setInterval(() => { AudioEngine.play('win'); c++; if(c>2) clearInterval(int); }, 800);
+        }
+
+        async function aiTurn() {
+            if (!players[currentTurnIndex].isAI) return; executeRoll(players[currentTurnIndex].color); await new Promise(r => setTimeout(r, 1200));
+            const cp = players[currentTurnIndex]; let bestToken = -1; let bestScore = -1;
+            cp.tokens.forEach((token, index) => {
+                if (!isValidMove(token, diceValue)) return; let score = 0;
+                if (token.state === 'home' && diceValue === 6) score = 40;
+                else if (token.state === 'board') { score = 10; let futurePos = (token.pos + diceValue) % 52; let canKill = false; if (!SAFE_ZONES.includes(futurePos)) { players.forEach(p => { if(p.color !== cp.color) p.tokens.forEach(t => { if(t.state==='board' && t.pos===futurePos) canKill = true; }); }); } if (canKill) score = 100; else if (SAFE_ZONES.includes(futurePos)) score = 30; }
+                else if (token.state === 'home_path') { score = 20; if (token.stepsTaken + diceValue === 56) score = 200; }
+                score += Math.random() * 5; if (score > bestScore) { bestScore = score; bestToken = index; }
+            });
+            if (bestToken !== -1) { await new Promise(r => setTimeout(r, 600)); onTokenClick(cp.color, bestToken); }
+        }
+
+        function pauseGame() {
+            if (document.getElementById('pause-menu')) { document.getElementById('pause-menu').remove(); return; }
+            const div = document.createElement('div'); div.id = 'pause-menu'; div.className = 'screen active'; div.style.backgroundColor = 'rgba(0,0,0,0.85)'; div.style.justifyContent = 'center'; div.style.alignItems = 'center'; div.innerHTML = `<div class="card" style="width: 80%; max-width: 300px;"><h2 style="color:white;">PAUSED</h2><button class="btn-std" style="background:#007aff" onclick="pauseGame()">Resume</button><button class="btn-std" style="background:#ff3b30" onclick="location.reload()">Quit Game</button></div>`; document.body.appendChild(div);
+        }
+    </script>
+</body>
+</html>
+// FIREBASE START
+const firebaseConfig = {
+  apiKey: "AIzaSyA1TZaUrpSfO45FENhYuUzUTeTB1f6jlV8",
+  authDomain: "ludoadmin-be500.firebaseapp.com",
+  databaseURL: "https://ludoadmin-be500-default-rtdb.asia-southeast1.firebasedatabase.app",
+  projectId: "ludoadmin-be500",
+  storageBucket: "ludoadmin-be500.firebasestorage.app",
+  messagingSenderId: "125458490259",
+  appId: "1:125458490259:web:d0c41ee7057c94f0357e66"
+};
+// FIREBASE END
