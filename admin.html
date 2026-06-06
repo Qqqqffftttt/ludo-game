@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title>Ludo Admin</title>
+</head>
+<body>
+
+<h1>Ludo Admin Panel</h1>
+
+<button onclick="startGame()">Start Game</button>
+<button onclick="stopGame()">Stop Game</button>
+
+<script type="module">
+import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+import { getDatabase, ref, set } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-database.js";
+
+const firebaseConfig = {
+  apiKey: "AIzaSyA1TZaUrpSfO45FENhYuUzUTeTB1f6jlV8",
+  authDomain: "ludoadmin-be500.firebaseapp.com",
+  databaseURL: "https://ludoadmin-be500-default-rtdb.asia-southeast1.firebasedatabase.app",
+  projectId: "ludoadmin-be500",
+  storageBucket: "ludoadmin-be500.firebasestorage.app",
+  messagingSenderId: "125458490259",
+  appId: "1:125458490259:web:d0c41ee7057c94f0357e66"
+};
+
+const app = initializeApp(firebaseConfig);
+const db = getDatabase(app);
+
+window.startGame = () => {
+  set(ref(db, "gameControl/status"), "start");
+};
+
+window.stopGame = () => {
+  set(ref(db, "gameControl/status"), "stop");
+};
+</script>
+
+</body>
+</html>
